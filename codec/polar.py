@@ -3,17 +3,6 @@ import math
 
 class Polar:
 
-    @staticmethod
-    def reverse(x, n):
-        """
-
-        :rtype: object
-        """
-        result = 0
-        for i in range(n):
-            if (x >> i) & 1: result |= 1 << (n - 1 - i)
-        return result
-
     def __init__(self, N, K):
         self.ch_type = 'bsc'
         self.N = N
@@ -24,7 +13,7 @@ class Polar:
         self.bit_reversed_idx = np.zeros(N)
 
         for i in range(N):
-            self.bit_reversed_idx[i] = self.reverse(i, self.n)
+            self.bit_reversed_idx[i] = reverse(i, self.n)
 
 
 
@@ -49,7 +38,7 @@ class Polar:
         self.LLR[self.N-1:] = llr_y
 
         for j in range(self.N):
-            i = Polar.reverse(j, self.n)
+            i = reverse(j, self.n)
 
             # Step 1 update LLR
             self._updateLLR(i)
@@ -61,7 +50,7 @@ class Polar:
                 else:
                     d_hat[i] = 1
             else:
-                d_hat[i]
+                d_hat[i] = frozen[i]
 
             # Step 3 update BITS
             self._updateBITS(d_hat[i], i)
@@ -71,10 +60,24 @@ class Polar:
         return u
 
     def _updateLLR(self, idx):
-        pass
+        nextlevel = self.n
+        if idx > 0:
+            pass
+
 
     def _updateBITS(self, latest_bit, idx):
         pass
+
+
+def reverse(x, n):
+    """
+
+    :rtype: object
+    """
+    result = 0
+    for i in range(n):
+        if (x >> i) & 1: result |= 1 << (n - 1 - i)
+    return result
 
 
 if __name__ == '__main__':
