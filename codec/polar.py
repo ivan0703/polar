@@ -5,6 +5,10 @@ class Polar:
 
     @staticmethod
     def reverse(x, n):
+        """
+
+        :rtype: object
+        """
         result = 0
         for i in range(n):
             if (x >> i) & 1: result |= 1 << (n - 1 - i)
@@ -36,13 +40,41 @@ class Polar:
         Successive decoding
         :return:
         """
-        u = np.zeros(len(llr_y))
-        self.LLR[0:N] = 0
+
+        # TODO: check llr_y == self.N
+
+        u = np.zeros(self.N)
+        d_hat = np.zeros(self.N)
+        self.LLR[0:self.N] = 0
         self.LLR[self.N-1:] = llr_y
+
+        for j in range(self.N):
+            i = Polar.reverse(j, self.n)
+
+            # Step 1 update LLR
+            self._updateLLR(i)
+
+            # Step 2 update d_hat
+            if frozen[i] == -1:
+                if self.LLR[0] > 0:
+                    d_hat[i] = 0
+                else:
+                    d_hat[i] = 1
+            else:
+                d_hat[i]
+
+            # Step 3 update BITS
+            self._updateBITS(d_hat[i], i)
+
+
 
         return u
 
+    def _updateLLR(self, idx):
+        pass
 
+    def _updateBITS(self, latest_bit, idx):
+        pass
 
 
 if __name__ == '__main__':
