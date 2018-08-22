@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 class Polar:
 
@@ -7,7 +6,7 @@ class Polar:
         self.ch_type = 'bsc'
         self.N = N
         self.K = K
-        self.n = math.ceil(math.log2(N))
+        self.n = np.ceil(np.log2(N))
         self.LLR = np.zeros(2*N - 1)
         self.BITS = np.zeros((2, N - 1))
         self.bit_reversed_idx = np.zeros(N)
@@ -62,11 +61,32 @@ class Polar:
     def _updateLLR(self, idx):
         nextlevel = self.n
         if idx > 0:
-            pass
+            # Update lastlevel using lowerconv
+            lastlevel = first1_index(idx, self.n)
+            # Indices of the lastlevel LLR in self.LLR
+            start = np.power(2,lastlevel-1) - 1
+            end   = np.power(2,lastlevel) - 1       # not included
+            for i in range(start, end):
+                self.LLR = lowerconv(self.BITS(i), self.LLR(2*(i+1)), self.LLR(2*(i+1)+1))
+            nextlevel = lastlevel - 1
 
+        # Update LLR at nextlevel down to 1
+        for lev in range(nextlevel, 0, -1):
+            # Indices of the lev LLR in self.LLR
+            start = np.power(2,lev-1) - 1
+            end = np.power(2,lev) - 1       # not included
+            for i in range(start, end):
+                self.LLR = upperconv(self.LLR(2*(i+1)), self.LLR(2*(i+1)+1))
 
     def _updateBITS(self, latest_bit, idx):
-        pass
+        if idx == self.N - 1:
+            return
+        elif idx < self.N / 2:
+            self.BITS[0][0] = latest_bit
+        else:
+            lastlevel = first0_index(idx, self.n)
+            self.BITS[1][0] = latest_bit
+
 
 
 def reverse(x, n):
@@ -80,8 +100,43 @@ def reverse(x, n):
     return result
 
 
+def first1_index(num, n):
+    result = n
+    for i in range(n-1):
+        if((num & (1<<(n-1-i))) != 0):
+            result = i + 1
+            break
+    return result
+
+def first0_index(num, n):
+    result = n
+    for i in range(n-1):
+        if((num & (1<<(n-1-i))) == 0):
+            result = i + 1
+            break
+    return result
+
+def lowerconv(upper_bit, upper_llr, lower_llr):
+    if upper_bit == 0:
+        return lower_llr + upper_llr
+    else:
+        return lower_llr - upper_llr
+
+def log_sum(l1, l2):
+    """
+    Calculate log( exp(l1) + exp(l2) )
+    """
+    if(l1 < l2):
+        return l2 + np.log1p(l1-l2)
+    else:
+        return l1 + np.log1p(l2-l1)
+
+def upperconv(llr1, llr2):
+    return log_sum(llr1+llr2, 0) - log_sum(llr1, llr2)
+
 if __name__ == '__main__':
     N = 8
+    n = np.ceil(np.log2(N))
     K = 4
     p = 0.1
     frozen = [0, 0, 0, -1, 0, -1, -1, -1]
@@ -94,3 +149,11 @@ if __name__ == '__main__':
     u = polar.decode(llr_y, frozen)
     print(f'{polar.LLR}')
     print(f'u={u}')
+
+    # test first1_index
+    for num in range(N):
+        print(f'first1({num},{n})={first1_index(num,n)}')
+
+    # test first0_index
+    for num in range(N):
+        print(f'first0({num},{n})={first0_index(num,n)}')
