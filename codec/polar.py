@@ -28,9 +28,7 @@ class Polar:
         Successive decoding
         :return:
         """
-
         # TODO: check llr_y == self.N
-
         u = np.zeros(self.N)
         d_hat = np.zeros(self.N)
         self.LLR[0:self.N] = 0
@@ -54,9 +52,8 @@ class Polar:
             # Step 3 update BITS
             self._updateBITS(d_hat[i], i)
 
-
-
-        return u
+        # return codeword
+        return d_hat
 
     def _updateLLR(self, idx):
         nextlevel = self.n
@@ -85,9 +82,27 @@ class Polar:
             self.BITS[0][0] = latest_bit
         else:
             lastlevel = first0_index(idx, self.n)
+
+            # Update BITS[1][0]; level 1
             self.BITS[1][0] = latest_bit
 
+            # Update BITS[1][1 ~ lastlevel-2]; bits on 2 ~ lastlevel-1 levels
+            for lev in range(2, lastlevel):
+                # using (lev-1) bits to update lev bits
+                known_bit_lev = lev - 1
+                start = np.power(2,known_bit_lev-1) - 1
+                end = np.power(2,known_bit_lev) - 1   # not included
+                for i in range(start, end):
+                    self.BITS[1][2*(i+1)]   = np.mod(self.BITS[0][i] + self.BITS[1][i], 2)
+                    self.BITS[1][2*(i+1)+1] = self.BITS[1][i]
 
+            # Update BITS[0][lastlevel-1]; bits on lastlevel level
+            known_bit_lev = lastlevel - 1
+            start = np.power(2, known_bit_lev - 1) - 1
+            end = np.power(2, known_bit_lev) - 1  # not included
+            for i in range(start, end):
+                self.BITS[0][2 *(i+1)]   = np.mod(self.BITS[0][i] + self.BITS[1][i], 2)
+                self.BITS[0][2 *(i+1)+1] = self.BITS[1][i]
 
 def reverse(x, n):
     """
