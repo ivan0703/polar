@@ -3,10 +3,20 @@ import math
 
 class Polar:
 
-    def __init__(self, N, K):
-        self.ch_type = 'bsc'
+    def __init__(self, N, K, channel_type, channel_param):
+        """
+
+        :param N: Block length
+        :param K: Message length
+        :param channel_type: 'bsc', 'awgn'
+        :param channel_param:
+        """
+
         self.N = N
         self.K = K
+        self.channel_type = channel_type
+        self.channel_param = channel_param
+
         self.n = math.ceil(math.log2(N))
         self.LLR = np.zeros(2*N - 1)
         self.BITS = np.zeros((2, N - 1))
@@ -17,9 +27,16 @@ class Polar:
 
 
 
-    # Construct frozenbits
-    def construct(self, N, K, channel):
-        return
+    def _construct(self):
+        """
+
+        :return:
+        """
+        # log domain z-value
+        z = np.zeros(self.N)
+
+        if(self.channel_type == 'bsc'):
+            z[0] = np.log(2) + 0.5 * np.log(self.channel_param) + 0.5 * np.log(1-self.channel_param)
 
     def encode(self, msg_bits):
         pass
@@ -169,7 +186,7 @@ if __name__ == '__main__':
     frozen = np.array([0, 0, 0, -1, 0, -1, -1, -1])
     llr_y = np.array([1, 0, 1, 0, 0, 1, 0, 0])
 
-    polar = Polar(N, K)
+    polar = Polar(N, K, 'bsc', 0.1)
     print(f'Polar({polar.N},{polar.K})')
     print(f'bit reverse (0~7): {polar.bit_reversed_idx}')
 
