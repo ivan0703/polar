@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import channels
 
 class Polar:
 
@@ -71,7 +72,7 @@ class Polar:
         :return: coded bits
         """
 
-        x = self.frozen
+        x = self.frozen.copy()
         x[x==-1] = u    # len(u) = K
 
         # loop through level
@@ -86,10 +87,9 @@ class Polar:
                 for j in range(halfB):
                     x[base+j] = np.mod(x[base+j] + x[base+j+halfB], 2)
 
-
         return x
 
-    def decode(self, llr_y, frozen):
+    def decode(self, llr_y):
         """
         Successive decoding
         :return:
@@ -100,8 +100,8 @@ class Polar:
         self.LLR[0:self.N] = 0
         self.LLR[self.N-1:] = llr_y
 
-        print(f'LLR={self.LLR}')
-        print(f'frozen={frozen}')
+        # print(f'LLR={self.LLR}')
+        print(f'frozen={self.frozen}')
 
         for j in range(self.N):
             i = reverse(j, self.n)
@@ -109,28 +109,29 @@ class Polar:
             # Step 1 update LLR
             self._updateLLR(i)
 
-            print(f'>>> Step {j}')
-            print(f'>>>> LLR:')
-            print(f'{self.LLR}')
-            print(f'>>>> BITS:')
-            print(f'{self.BITS}')
+            # print(f'>>> Step {j}')
+            # print(f'>>>> LLR:')
+            # print(f'{self.LLR}')
+            # print(f'>>>> BITS:')
+            # print(f'{self.BITS}')
 
             # Step 2 update d_hat
-            if frozen[i] == -1:
+            if self.frozen[i] == -1:
                 if self.LLR[0] > 0:
                     d_hat[i] = 0
                 else:
                     d_hat[i] = 1
             else:
-                d_hat[i] = frozen[i]
+                d_hat[i] = self.frozen[i]
 
             # Step 3 update BITS
             self._updateBITS(d_hat[i], i)
 
         print(f'd_hat={d_hat}')
+        print(f'frozen={self.frozen}')
 
         # return codeword
-        return d_hat[frozen == -1]
+        return d_hat[self.frozen == -1]
 
     def _updateLLR(self, idx):
         nextlevel = self.n
@@ -239,8 +240,6 @@ if __name__ == '__main__':
     p = 0.1
 
     msg = np.array([1,0,0,1])
-    frozen = np.array([0, 0, 0, -1, 0, -1, -1, -1])
-    llr_y = np.array([1, 0, 1, 0, 0, 1, 0, 0])
 
     polar = Polar(N, K, 'bsc', 0.1)
     print(f'Polar({polar.N},{polar.K})')
@@ -250,15 +249,15 @@ if __name__ == '__main__':
     # encode
     codeword = polar.encode(msg)
     print(f'codeword={codeword}')
+    print(f'frozen={polar.frozen}')
 
-    # # test first1_index
-    # for num in range(N):
-    #     print(f'first1({num},{n})={first1_index(num,n)}')
-    #
-    # # test first0_index
-    # for num in range(N):
-    #     print(f'first0({num},{n})={first0_index(num,n)}')
+    out_bits = channels.bsc(codeword, p)
+    print(f'channel output bits = {out_bits}')
 
-    #u = polar.decode(llr_y, frozen)
-    #print(f'LLR={polar.LLR}')
-    #print(f'u={u}')
+    out_llr = channels.bsc_llr(codeword, p)
+    print(f'channel output llr = {out_llr}')
+
+
+    u = polar.decode(out_llr)
+    print(f'LLR={polar.LLR}')
+    print(f'u={u}')
