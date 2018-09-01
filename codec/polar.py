@@ -64,8 +64,30 @@ class Polar:
 
 
 
-    def encode(self, msg_bits):
-        pass
+    def encode(self, u):
+        """
+
+        :param u: message bits
+        :return: coded bits
+        """
+
+        x = self.frozen
+        x[x==-1] = u    # len(u) = K
+
+        # loop through level
+        for i in range(self.n):
+            B  = np.power(2, self.n-i)
+            nB = np.power(2,i)
+            halfB = int(B/2)
+
+            # loop through nB
+            for n in range(nB):
+                base = n*B
+                for j in range(halfB):
+                    x[base+j] = np.mod(x[base+j] + x[base+j+halfB], 2)
+
+
+        return x
 
     def decode(self, llr_y, frozen):
         """
@@ -211,10 +233,12 @@ def upperconv(llr1, llr2):
     return log_sum(llr1+llr2, 0) - log_sum(llr1, llr2)
 
 if __name__ == '__main__':
-    N = 16
+    N = 8
     n = math.ceil(math.log2(N))
-    K = 5
+    K = 4
     p = 0.1
+
+    msg = np.array([1,0,0,1])
     frozen = np.array([0, 0, 0, -1, 0, -1, -1, -1])
     llr_y = np.array([1, 0, 1, 0, 0, 1, 0, 0])
 
@@ -222,6 +246,10 @@ if __name__ == '__main__':
     print(f'Polar({polar.N},{polar.K})')
     print(f'bit reverse (0~7): {polar.bit_reversed_idx}')
     print(f'frozen={polar.frozen}')
+
+    # encode
+    codeword = polar.encode(msg)
+    print(f'codeword={codeword}')
 
     # # test first1_index
     # for num in range(N):
