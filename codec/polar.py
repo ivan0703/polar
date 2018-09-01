@@ -21,6 +21,7 @@ class Polar:
         self.LLR = np.zeros(2*N - 1)
         self.BITS = np.zeros((2, N - 1))
         self.bit_reversed_idx = np.zeros(N)
+        self.frozen = self._construct()
 
         for i in range(N):
             self.bit_reversed_idx[i] = reverse(i, self.n)
@@ -30,13 +31,38 @@ class Polar:
     def _construct(self):
         """
 
-        :return:
+        :return: frozen
         """
         # log domain z-value
         z = np.zeros(self.N)
 
+        # initialize
+        frozen = np.full(self.N, -1)
+
         if(self.channel_type == 'bsc'):
             z[0] = np.log(2) + 0.5 * np.log(self.channel_param) + 0.5 * np.log(1-self.channel_param)
+        elif(self.channel_type == 'awgn'):
+            pass
+
+        for lev in range(self.n):
+            # number of node at lev
+            lev_node = np.power(2, lev)
+
+            # Use z-values on lev to generate z-values on lev+1
+            for i in range(lev_node):
+                T = z[i]
+                z[i] = log_diff(np.log(2)+T, 2*T) # 2z - z^2 in log domain
+                z[i+lev_node] = 2*T               # z^2 in log domain
+
+        # Sorting the resulting z-values
+        sorted_idx = np.argsort(z)
+
+        # The last N-K indices in sorted_idx is to be frozen
+        frozen[np.sort(sorted_idx[K:])] = 0
+
+        return frozen
+
+
 
     def encode(self, msg_bits):
         pass
@@ -175,13 +201,19 @@ def log_sum(l1, l2):
     else:
         return l1 + np.log1p(np.exp(l2-l1))
 
+def log_diff(l1, l2):
+    """
+    Calculate log( exp(l1) - exp(l2) ); l1 > l2 is required
+    """
+    return l1 + np.log1p(-np.exp(l2-l1))
+
 def upperconv(llr1, llr2):
     return log_sum(llr1+llr2, 0) - log_sum(llr1, llr2)
 
 if __name__ == '__main__':
-    N = 8
+    N = 16
     n = math.ceil(math.log2(N))
-    K = 4
+    K = 5
     p = 0.1
     frozen = np.array([0, 0, 0, -1, 0, -1, -1, -1])
     llr_y = np.array([1, 0, 1, 0, 0, 1, 0, 0])
@@ -189,6 +221,7 @@ if __name__ == '__main__':
     polar = Polar(N, K, 'bsc', 0.1)
     print(f'Polar({polar.N},{polar.K})')
     print(f'bit reverse (0~7): {polar.bit_reversed_idx}')
+    print(f'frozen={polar.frozen}')
 
     # # test first1_index
     # for num in range(N):
@@ -198,6 +231,6 @@ if __name__ == '__main__':
     # for num in range(N):
     #     print(f'first0({num},{n})={first0_index(num,n)}')
 
-    u = polar.decode(llr_y, frozen)
-    print(f'LLR={polar.LLR}')
-    print(f'u={u}')
+    #u = polar.decode(llr_y, frozen)
+    #print(f'LLR={polar.LLR}')
+    #print(f'u={u}')
