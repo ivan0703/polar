@@ -1,6 +1,6 @@
 import numpy as np
 import math
-import channels
+#import channels
 
 class Polar:
 
@@ -59,7 +59,7 @@ class Polar:
         sorted_idx = np.argsort(z)
 
         # The last N-K indices in sorted_idx is to be frozen
-        frozen[np.sort(sorted_idx[K:])] = 0
+        frozen[np.sort(sorted_idx[self.K:])] = 0
 
         return frozen
 
@@ -251,13 +251,13 @@ if __name__ == '__main__':
     print(f'codeword={codeword}')
     print(f'frozen={polar.frozen}')
 
-    out_bits = channels.bsc(codeword, p)
-    print(f'channel output bits = {out_bits}')
+    # out_bits = channels.bsc(codeword, p)
+    # print(f'channel output bits = {out_bits}')
 
-    out_llr = channels.bsc_llr(codeword, p)
-    print(f'channel output llr = {out_llr}')
+    # out_llr = channels.bsc_llr(codeword, p)
+    # print(f'channel output llr = {out_llr}')
 
 
-    u = polar.decode(out_llr)
-    print(f'LLR={polar.LLR}')
-    print(f'u={u}')
+    # u = polar.decode(out_llr)
+    # print(f'LLR={polar.LLR}')
+    # print(f'u={u}')
